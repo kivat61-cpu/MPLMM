@@ -8,21 +8,24 @@ from modules.transformer import TransformerEncoder
 class MULTModel(nn.Module):
     def __init__(self, hyp_params):
         super(MULTModel, self).__init__()
-        self.orig_d_l, self.orig_d_a, self.orig_d_v = (
-            hyp_params.orig_d_l,
-            hyp_params.orig_d_a,
-            hyp_params.orig_d_v,
-        )
-        self.d_l, self.d_a, self.d_v = (
-            hyp_params.proj_dim,
-            hyp_params.proj_dim,
-            hyp_params.proj_dim,
-        )
+        # self.orig_d_l, self.orig_d_a, self.orig_d_v = (
+        #     hyp_params.orig_d_l,
+        #     hyp_params.orig_d_a,
+        #     hyp_params.orig_d_v,
+        # )
+        # self.d_l, self.d_a, self.d_v = (
+        #     hyp_params.proj_dim,
+        #     hyp_params.proj_dim,
+        #     hyp_params.proj_dim,
+        # )
+        self.orig_d_l, self.orig_d_a = hyp_params.orig_d_l, hyp_params.orig_d_a
+        self.d_l, self.d_a = hyp_params.proj_dim, hyp_params.proj_dim
+
         self.num_heads = hyp_params.num_heads
         self.layers = hyp_params.layers
         self.attn_dropout = hyp_params.attn_dropout
         self.attn_dropout_a = hyp_params.attn_dropout_a
-        self.attn_dropout_v = hyp_params.attn_dropout_v
+        # self.attn_dropout_v = hyp_params.attn_dropout_v
         self.relu_dropout = hyp_params.relu_dropout
         self.res_dropout = hyp_params.res_dropout
         self.out_dropout = hyp_params.out_dropout
@@ -30,9 +33,15 @@ class MULTModel(nn.Module):
         self.attn_mask = hyp_params.attn_mask
         self.prompt_length = hyp_params.prompt_length
         self.prompt_dim = hyp_params.prompt_dim
-        self.llen, self.alen, self.vlen = hyp_params.seq_len
+
+        # self.llen, self.alen, self.vlen = hyp_params.seq_len
+        self.llen, self.alen = hyp_params.seq_len
+
         combined_dim = self.d_l + self.d_a + self.d_v
-        combined_dim = 2 * (self.d_l + self.d_a + self.d_v)
+
+        # combined_dim = 2 * (self.d_l + self.d_a + self.d_v)
+        combined_dim = 2 * (self.d_l + self.d_a)
+
         output_dim = hyp_params.output_dim
 
         # 1. Temporal convolutional layers
@@ -42,9 +51,9 @@ class MULTModel(nn.Module):
         self.proj_a = nn.Conv1d(
             self.orig_d_a, self.d_a, kernel_size=1, padding=0, bias=False
         )
-        self.proj_v = nn.Conv1d(
-            self.orig_d_v, self.d_v, kernel_size=1, padding=0, bias=False
-        )
+        # self.proj_v = nn.Conv1d(
+        #     self.orig_d_v, self.d_v, kernel_size=1, padding=0, bias=False
+        # )
 
         # 2. Crossmodal Attentions
         self.trans_l_with_a = self.get_network(self_type="la")
@@ -147,21 +156,24 @@ class MULTModel(nn.Module):
 class PromptModel(nn.Module):
     def __init__(self, hyp_params):
         super(PromptModel, self).__init__()
-        self.orig_d_l, self.orig_d_a, self.orig_d_v = (
-            hyp_params.orig_d_l,
-            hyp_params.orig_d_a,
-            hyp_params.orig_d_v,
-        )
-        self.d_l, self.d_a, self.d_v = (
-            hyp_params.proj_dim,
-            hyp_params.proj_dim,
-            hyp_params.proj_dim,
-        )
+        # self.orig_d_l, self.orig_d_a, self.orig_d_v = (
+        #     hyp_params.orig_d_l,
+        #     hyp_params.orig_d_a,
+        #     hyp_params.orig_d_v,
+        # )
+        # self.d_l, self.d_a, self.d_v = (
+        #     hyp_params.proj_dim,
+        #     hyp_params.proj_dim,
+        #     hyp_params.proj_dim,
+        # )
+        self.orig_d_l, self.orig_d_a = hyp_params.orig_d_l, hyp_params.orig_d_a
+        self.d_l, self.d_a = hyp_params.proj_dim, hyp_params.proj_dim
+
         self.num_heads = hyp_params.num_heads
         self.layers = hyp_params.layers
         self.attn_dropout = hyp_params.attn_dropout
         self.attn_dropout_a = hyp_params.attn_dropout_a
-        self.attn_dropout_v = hyp_params.attn_dropout_v
+        # self.attn_dropout_v = hyp_params.attn_dropout_v
         self.relu_dropout = hyp_params.relu_dropout
         self.res_dropout = hyp_params.res_dropout
         self.out_dropout = hyp_params.out_dropout
@@ -169,38 +181,46 @@ class PromptModel(nn.Module):
         self.attn_mask = hyp_params.attn_mask
         self.prompt_length = hyp_params.prompt_length
         self.prompt_dim = hyp_params.prompt_dim
-        self.llen, self.alen, self.vlen = hyp_params.seq_len
+
+        # self.llen, self.alen, self.vlen = hyp_params.seq_len
+        self.llen, self.alen = hyp_params.seq_len
+
         combined_dim = self.d_l + self.d_a + self.d_v
-        combined_dim = 2 * (self.d_l + self.d_a + self.d_v)
+
+        # combined_dim = 2 * (self.d_l + self.d_a + self.d_v)
+        combined_dim = 2 * (self.d_l + self.d_a)
+
         output_dim = hyp_params.output_dim
 
-        generative_prompt = torch.zeros(3, self.prompt_dim, self.prompt_length)
+        # generative_prompt = torch.zeros(3, self.prompt_dim, self.prompt_length)
+        generative_prompt = torch.zeros(2, self.prompt_dim, self.prompt_length)
+
         self.generative_prompt = nn.Parameter(generative_prompt)
 
         self.l2a = MLPLayer(self.orig_d_l, self.prompt_dim)
-        self.l2v = MLPLayer(self.orig_d_l, self.prompt_dim)
-        self.v2a = MLPLayer(self.orig_d_v, self.prompt_dim)
-        self.v2l = MLPLayer(self.orig_d_v, self.prompt_dim)
-        self.a2v = MLPLayer(self.orig_d_a, self.prompt_dim)
+        # self.l2v = MLPLayer(self.orig_d_l, self.prompt_dim)
+        # self.v2a = MLPLayer(self.orig_d_v, self.prompt_dim)
+        # self.v2l = MLPLayer(self.orig_d_v, self.prompt_dim)
+        # self.a2v = MLPLayer(self.orig_d_a, self.prompt_dim)
         self.a2l = MLPLayer(self.orig_d_a, self.prompt_dim)
 
         self.l_ap = MLPLayer(self.prompt_length + self.alen, self.llen, True)
-        self.l_vp = MLPLayer(self.prompt_length + self.vlen, self.llen, True)
-        self.l_avp = MLPLayer(
-            self.prompt_length + self.alen + self.vlen, self.llen, True
-        )
+        # self.l_vp = MLPLayer(self.prompt_length + self.vlen, self.llen, True)
+        # self.l_avp = MLPLayer(
+        #     self.prompt_length + self.alen + self.vlen, self.llen, True
+        # )
 
         self.a_lp = MLPLayer(self.prompt_length + self.llen, self.alen, True)
-        self.a_vp = MLPLayer(self.prompt_length + self.vlen, self.alen, True)
-        self.a_lvp = MLPLayer(
-            self.prompt_length + self.llen + self.vlen, self.alen, True
-        )
+        # self.a_vp = MLPLayer(self.prompt_length + self.vlen, self.alen, True)
+        # self.a_lvp = MLPLayer(
+        #     self.prompt_length + self.llen + self.vlen, self.alen, True
+        # )
 
-        self.v_ap = MLPLayer(self.prompt_length + self.alen, self.vlen, True)
-        self.v_lp = MLPLayer(self.prompt_length + self.llen, self.vlen, True)
-        self.v_alp = MLPLayer(
-            self.prompt_length + self.alen + self.llen, self.vlen, True
-        )
+        # self.v_ap = MLPLayer(self.prompt_length + self.alen, self.vlen, True)
+        # self.v_lp = MLPLayer(self.prompt_length + self.llen, self.vlen, True)
+        # self.v_alp = MLPLayer(
+        #     self.prompt_length + self.alen + self.llen, self.vlen, True
+        # )
 
         # 1. Temporal convolutional layers
         self.proj_l = nn.Conv1d(
@@ -209,24 +229,26 @@ class PromptModel(nn.Module):
         self.proj_a = nn.Conv1d(
             self.orig_d_a, self.d_a, kernel_size=1, padding=0, bias=False
         )
-        self.proj_v = nn.Conv1d(
-            self.orig_d_v, self.d_v, kernel_size=1, padding=0, bias=False
-        )
+        # self.proj_v = nn.Conv1d(
+        #     self.orig_d_v, self.d_v, kernel_size=1, padding=0, bias=False
+        # )
 
         # modality-signal prompts
         self.promptl_m = nn.Parameter(torch.zeros(self.prompt_dim, self.llen))
         self.prompta_m = nn.Parameter(torch.zeros(self.prompt_dim, self.alen))
-        self.promptv_m = nn.Parameter(torch.zeros(self.prompt_dim, self.vlen))
+        # self.promptv_m = nn.Parameter(torch.zeros(self.prompt_dim, self.vlen))
         self.promptl_nm = nn.Parameter(torch.zeros(self.prompt_dim, self.llen))
         self.prompta_nm = nn.Parameter(torch.zeros(self.prompt_dim, self.alen))
-        self.promptv_nm = nn.Parameter(torch.zeros(self.prompt_dim, self.vlen))
+        # self.promptv_nm = nn.Parameter(torch.zeros(self.prompt_dim, self.vlen))
 
         # missing-type prompts
-        self.missing_type_prompt = nn.Parameter(
-            torch.zeros(3, self.prompt_length, self.prompt_dim)
-        )
+        # self.missing_type_prompt = nn.Parameter(
+        #     torch.zeros(3, self.prompt_length, self.prompt_dim)
+        # )
+        self.missing_type_prompt = nn.Parameter(torch.zeros(2, self.prompt_length, self.prompt_dim))
+
         self.m_a = nn.Parameter(torch.zeros(self.alen, 2 * self.prompt_dim))
-        self.m_v = nn.Parameter(torch.zeros(self.vlen, 2 * self.prompt_dim))
+        # self.m_v = nn.Parameter(torch.zeros(self.vlen, 2 * self.prompt_dim))
         self.m_l = nn.Parameter(torch.zeros(self.llen, 2 * self.prompt_dim))
 
         # 2. Crossmodal Attentions
