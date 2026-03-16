@@ -3,7 +3,7 @@ from src.mosidata import MOSIData
 from src.iemodata import IEMOData
 from src.simsdata import SIMSData
 from torch.utils.data import DataLoader
-
+from src.csvdata import CSVTextCodeData
 
 class opt:
     A_type = "comparE"
@@ -47,6 +47,10 @@ def get_data(args, split="train", full_data=False):
         )
     elif args.dataset == "sims":
         data = SIMSData(
+            args.data_path, split, drop_rate=args.drop_rate, full_data=full_data
+        )
+    elif args.dataset == "csv":
+        data = CSVTextCodeData(
             args.data_path, split, drop_rate=args.drop_rate, full_data=full_data
         )
     return data

@@ -47,16 +47,35 @@ def train_model(settings, hyp_params, train_loader, valid_loader, test_loader):
         proc_loss, proc_size = 0, 0
         start_time = time.time()
         for i_batch, (batch_X, batch_Y, missing_mod) in enumerate(train_loader):
-            text, audio, vision = batch_X
+            # text, audio, vision = batch_X
+            # eval_attr = batch_Y.squeeze(-1)
+            # model.zero_grad()
+
+            # if hyp_params.use_cuda:
+            #     with torch.cuda.device(0):
+            #         text, audio, vision, eval_attr = (
+            #             text.cuda(),
+            #             audio.cuda(),
+            #             vision.cuda(),
+            #             eval_attr.cuda(),
+            #         )
+            #         if hyp_params.dataset == "iemocap":
+            #             eval_attr = eval_attr.long()
+
+            # batch_size = text.size(0)
+            # net = nn.DataParallel(model) if batch_size > 10 else model
+            # preds = net(text, audio, vision, missing_mod)
+
+            text, code = batch_X
             eval_attr = batch_Y.squeeze(-1)
             model.zero_grad()
 
             if hyp_params.use_cuda:
                 with torch.cuda.device(0):
-                    text, audio, vision, eval_attr = (
+                    # 2. 放到 GPU 上的操作也要删掉 vision
+                    text, code, eval_attr = (
                         text.cuda(),
-                        audio.cuda(),
-                        vision.cuda(),
+                        code.cuda(),
                         eval_attr.cuda(),
                     )
                     if hyp_params.dataset == "iemocap":
@@ -64,7 +83,8 @@ def train_model(settings, hyp_params, train_loader, valid_loader, test_loader):
 
             batch_size = text.size(0)
             net = nn.DataParallel(model) if batch_size > 10 else model
-            preds = net(text, audio, vision, missing_mod)
+            # 3. 输入模型的前向传播删掉第三个模态参数
+            preds = net(text, code, missing_mod)
 
             if hyp_params.dataset == "iemocap":
                 preds = preds.view(-1, 4)
@@ -100,16 +120,36 @@ def train_model(settings, hyp_params, train_loader, valid_loader, test_loader):
         truths = []
 
         with torch.no_grad():
+            # for i_batch, (batch_X, batch_Y, missing_mod) in enumerate(loader):
+            #     text, audio, vision = batch_X
+            #     eval_attr = batch_Y.squeeze(dim=-1)  # if num of labels is 1
+
+            #     if hyp_params.use_cuda:
+            #         with torch.cuda.device(0):
+            #             text, audio, vision, eval_attr = (
+            #                 text.cuda(),
+            #                 audio.cuda(),
+            #                 vision.cuda(),
+            #                 eval_attr.cuda(),
+            #             )
+            #             if hyp_params.dataset == "iemocap":
+            #                 eval_attr = eval_attr.long()
+
+            #     batch_size = text.size(0)
+            #     net = nn.DataParallel(model) if batch_size > 10 else model
+            #     preds = net(text, audio, vision, missing_mod)
+
             for i_batch, (batch_X, batch_Y, missing_mod) in enumerate(loader):
-                text, audio, vision = batch_X
-                eval_attr = batch_Y.squeeze(dim=-1)  # if num of labels is 1
+                # 1. 解包
+                text, code = batch_X
+                eval_attr = batch_Y.squeeze(dim=-1)
 
                 if hyp_params.use_cuda:
                     with torch.cuda.device(0):
-                        text, audio, vision, eval_attr = (
+                        # 2. 放到 GPU
+                        text, code, eval_attr = (
                             text.cuda(),
-                            audio.cuda(),
-                            vision.cuda(),
+                            code.cuda(),
                             eval_attr.cuda(),
                         )
                         if hyp_params.dataset == "iemocap":
@@ -117,7 +157,9 @@ def train_model(settings, hyp_params, train_loader, valid_loader, test_loader):
 
                 batch_size = text.size(0)
                 net = nn.DataParallel(model) if batch_size > 10 else model
-                preds = net(text, audio, vision, missing_mod)
+                # 3. 输入模型
+                preds = net(text, code, missing_mod)
+
                 if hyp_params.dataset == "iemocap":
                     preds = preds.view(-1, 4)
                     eval_attr = eval_attr.view(-1)

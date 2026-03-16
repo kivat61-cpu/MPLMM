@@ -2,7 +2,6 @@ import torch
 from torch import nn
 from torch.nn import Parameter
 import torch.nn.functional as F
-import math
 
 class MultiheadAttention(nn.Module):
     """Multi-headed attention.

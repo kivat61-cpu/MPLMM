@@ -95,9 +95,9 @@ args = parser.parse_args()
 
 dataset = str.lower(args.dataset.strip())
 
-output_dim_dict = {"mosi": 1, "mosei": 1, "sims": 1, "iemocap": 4}
+output_dim_dict = {"mosi": 1, "mosei": 1, "sims": 1, "iemocap": 4, "csv": 1}
 
-criterion_dict = {"iemocap": "CrossEntropyLoss"}
+criterion_dict = {"iemocap": "CrossEntropyLoss", "csv": "L1Loss"}
 
 
 def setup_seed(seed):
@@ -138,7 +138,10 @@ testloder = dataloaders["test"]
 #
 ####################################################################
 hyp_params = args
-hyp_params.orig_d_l, hyp_params.orig_d_a, hyp_params.orig_d_v = orig_dims
+
+# hyp_params.orig_d_l, hyp_params.orig_d_a, hyp_params.orig_d_v = orig_dims
+hyp_params.orig_d_l, hyp_params.orig_d_a = orig_dims
+
 hyp_params.layers = args.nlevels
 hyp_params.use_cuda = use_cuda
 hyp_params.dataset = dataset
